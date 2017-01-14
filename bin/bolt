@@ -1,0 +1,47 @@
+#!/usr/bin/env php
+<?php
+
+if (PHP_VERSION_ID < 50500) {
+    file_put_contents('php://stderr', sprintf(
+        "Bolt Installer requires PHP 5.5 version or higher and your system has\n".
+        "PHP %s version installed.\n\n".
+        "To solve this issue, upgrade your PHP installation or install Symfony manually\n".
+        "executing the following command:\n\n".
+        "composer create-project symfony/framework-standard-edition <project-name> <symfony-version>\n\n",
+        PHP_VERSION
+    ));
+
+    exit(1);
+}
+
+if (extension_loaded('ioncube_loader')) {
+    file_put_contents('php://stderr',
+        "Bolt Installer is not compatible with the 'ioncube_loader' PHP extension.\n".
+        "Disable that extension before running the installer.\n\n".
+        "Alternatively, install Bolt manually executing the following command:\n\n".
+        "composer create-project bolt/composer-install <project-name> <bolt-version>\n\n"
+    );
+
+    exit(1);
+}
+
+require file_exists(__DIR__.'/../vendor/autoload.php')
+    ? __DIR__.'/../vendor/autoload.php'
+    : __DIR__.'/../../../autoload.php';
+
+$appVersion = '0.1.0-DEV';
+
+// Windows uses Path instead of PATH
+if (!isset($_SERVER['PATH']) && isset($_SERVER['Path'])) {
+    $_SERVER['PATH'] = $_SERVER['Path'];
+}
+
+$app = new Bolt\Installer\Application('Symfony Installer', $appVersion);
+$app->add(new Bolt\Installer\Command\AboutCommand($appVersion));
+$app->add(new Bolt\Installer\Command\NewCommand());
+$app->add(new Bolt\Installer\Command\DemoCommand());
+$app->add(new Bolt\Installer\Command\SelfUpdateCommand());
+
+$app->setDefaultCommand('about');
+
+$app->run();
