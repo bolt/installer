@@ -4,6 +4,7 @@ namespace Bolt\Installer\Command;
 
 use Bolt\Installer\Exception\AbortException;
 use Bolt\Installer\Manager\ComposerManager;
+use GuzzleHttp\Exception\ClientException;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -18,6 +19,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class NewCommand extends DownloadCommand
 {
+    protected $majorMinorVersion;
+    protected $majorMinorPatchVersion;
+
     /**
      * {@inheritdoc}
      */
@@ -255,14 +259,78 @@ class NewCommand extends DownloadCommand
         if ($this->version === 'latest') {
             return 'https://bolt.cm/distribution/bolt-' . $this->version;
         }
+        $this->getRemoteVersions();
 
-        return sprintf('https://bolt.cm/distribution/archive/%s/bolt-%s', $this->getMinorVersion(), $this->version);
+        return sprintf('https://github.com/bolt/bolt/releases/download/v%s/bolt-%s', $this->majorMinorPatchVersion, $this->majorMinorPatchVersion);
     }
 
-    private function getMinorVersion()
+    /**
+     * Determine best available version.
+     */
+    private function getRemoteVersions()
     {
-        $ver = explode('.', $this->version);
+        $client = $this->getGuzzleClient();
 
-        return $ver[0] . '.' . isset($ver[1]) ? $ver[1] : 0;
+        try {
+            $request = $client->createRequest('GET', 'https://get.bolt.cm/versions.json');
+            $response = $client->send($request);
+        } catch (ClientException $e) {
+
+            throw new \RuntimeException(sprintf(
+                "There was an error downloading %s from https://get.bolt.cm/versions.json:\n%s",
+                $this->getDownloadedApplicationType(),
+                $e->getMessage()
+            ), null, $e);
+        }
+
+        $versions = $response->getBody()->getContents();
+        $versions = json_decode($versions);
+
+        $parts = explode('.', $this->version);
+        $majorKey = $parts[0] . '.x';
+        if (!property_exists($versions, $majorKey)) {
+            throw new \RuntimeException(sprintf(
+                "Requested version '%s' is not is a valid major release\n",
+                $parts[0]
+            ));
+        }
+
+        $available = $versions->$majorKey;
+        $candidatesMinor = [];
+
+        // X.Y versions
+        foreach (get_object_vars($available) as $a => $v) {
+            $parts = explode('.', $this->version);
+            $majorMinorKey = $parts[0] . '.' . $parts[1];
+            if (version_compare($a, $majorMinorKey, '>=')) {
+                $candidatesMinor[] = $a;
+            }
+        }
+        arsort($candidatesMinor);
+        $majorMinor = reset($candidatesMinor);
+        if ($majorMinor === false) {
+            throw new \RuntimeException(sprintf('Unable to locate a version matching "%s" to download.', $this->version));
+        }
+
+        // X.Y.Z versions
+        if (count($parts) > 2) {
+            $majorMinorPatch = $this->version;
+        } else {
+            $candidatesPatch = [];
+            foreach ($available->$majorMinor as $a => $v) {
+                if (version_compare($v, $this->version, '>=')) {
+                    $candidatesPatch[] = $v;
+                }
+            }
+            arsort($candidatesPatch);
+            $majorMinorPatch = reset($candidatesPatch);
+            if ($majorMinorPatch === false) {
+                throw new \RuntimeException(sprintf('Unable to locate a version matching "%s" to download.', $this->version));
+            }
+        }
+
+        // Store them
+        $this->majorMinorVersion = $majorMinor;
+        $this->majorMinorPatchVersion = $majorMinorPatch;
     }
 }
