@@ -38,6 +38,7 @@ if (!isset($_SERVER['PATH']) && isset($_SERVER['Path'])) {
 
 $app = new Bolt\Installer\Application('Symfony Installer', $appVersion);
 $app->add(new Bolt\Installer\Command\AboutCommand($appVersion));
+$app->add(new Bolt\Installer\Command\CheckCommand());
 $app->add(new Bolt\Installer\Command\NewCommand());
 $app->add(new Bolt\Installer\Command\DemoCommand());
 $app->add(new Bolt\Installer\Command\SelfUpdateCommand());
