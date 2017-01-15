@@ -252,6 +252,17 @@ class NewCommand extends DownloadCommand
      */
     protected function getRemoteFileUrl()
     {
-        return 'https://bolt.cm/distribution/bolt-' . $this->version;
+        if ($this->version === 'latest') {
+            return 'https://bolt.cm/distribution/bolt-' . $this->version;
+        }
+
+        return sprintf('https://bolt.cm/distribution/archive/%s/bolt-%s', $this->getMinorVersion(), $this->version);
+    }
+
+    private function getMinorVersion()
+    {
+        $ver = explode('.', $this->version);
+
+        return $ver[0] . '.' . isset($ver[1]) ? $ver[1] : 0;
     }
 }
