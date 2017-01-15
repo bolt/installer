@@ -194,10 +194,10 @@ class BoltRequirements extends RequirementCollection
 
             $this->addPhpIniRecommendation(
                 'xdebug.max_nesting_level',
-                create_function('$cfgValue', 'return $cfgValue > 1000;'),
+                create_function('$cfgValue', 'return $cfgValue > 500;'),
                 true,
-                'xdebug.max_nesting_level should be above 1000 in php.ini',
-                'Set "<strong>xdebug.max_nesting_level</strong>" to e.g. "<strong>250</strong>" in php.ini<a href="#phpini">*</a> to stop Xdebug\'s infinite recursion protection erroneously throwing a fatal error in your project.'
+                'xdebug.max_nesting_level should be above 500 in php.ini',
+                'Set "<strong>xdebug.max_nesting_level</strong>" to e.g. "<strong>500</strong>" in php.ini<a href="#phpini">*</a> to stop Xdebug\'s infinite recursion protection erroneously throwing a fatal error in your project.'
             );
         }
 
