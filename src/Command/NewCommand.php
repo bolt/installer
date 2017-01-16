@@ -272,8 +272,7 @@ class NewCommand extends DownloadCommand
         $client = $this->getGuzzleClient();
 
         try {
-            $request = $client->createRequest('GET', 'https://get.bolt.cm/versions.json');
-            $response = $client->send($request);
+            $response = $client->get('https://get.bolt.cm/versions.json');
         } catch (ClientException $e) {
 
             throw new \RuntimeException(sprintf(

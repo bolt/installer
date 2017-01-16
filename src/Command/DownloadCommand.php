@@ -14,9 +14,7 @@ use Distill\Exception\IO\Output\TargetDirectoryNotWritableException;
 use Distill\Format\Composed\TarGz;
 use Distill\Strategy\MinimumSize;
 use GuzzleHttp\Client;
-use GuzzleHttp\Event\ProgressEvent;
 use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Utils;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Helper;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -111,12 +109,12 @@ abstract class DownloadCommand extends Command
 
         /** @var ProgressBar|null $progressBar */
         $progressBar = null;
-        $downloadCallback = function (ProgressEvent $event) use (&$progressBar) {
-            $downloadSize = $event->downloadSize;
-            $downloaded = $event->downloaded;
+        $downloadCallback = function ($downloadSize, $downloaded, $uploadSize, $uploaded) use (&$progressBar) {
+            $progressTotal = $downloadSize ?: $uploadSize;
+            $progressCurrent = $downloaded ?: $uploaded;
 
             // progress bar is only displayed for files larger than 1MB
-            if ($downloadSize < 1 * 1024 * 1024) {
+            if ($progressTotal < 1 * 1024 * 1024) {
                 return;
             }
 
@@ -128,9 +126,9 @@ abstract class DownloadCommand extends Command
                     return str_pad(Helper::formatMemory($bar->getProgress()), 11, ' ', STR_PAD_LEFT);
                 });
 
-                $progressBar = new ProgressBar($this->output, $downloadSize);
+                $progressBar = new ProgressBar($this->output, $progressTotal);
                 $progressBar->setFormat('%current%/%max% %bar%  %percent:3s%%');
-                $progressBar->setRedrawFrequency(max(1, floor($downloadSize / 1000)));
+                $progressBar->setRedrawFrequency(max(1, floor($progressTotal / 1000)));
                 $progressBar->setBarWidth(60);
 
                 if (!defined('PHP_WINDOWS_VERSION_BUILD')) {
@@ -142,7 +140,7 @@ abstract class DownloadCommand extends Command
                 $progressBar->start();
             }
 
-            $progressBar->setProgress($downloaded);
+            $progressBar->setProgress($progressCurrent);
         };
 
         $client = $this->getGuzzleClient();
@@ -151,9 +149,7 @@ abstract class DownloadCommand extends Command
         $this->downloadedFilePath = rtrim(getcwd(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.' . uniqid(time()) . DIRECTORY_SEPARATOR . 'bolt.' . pathinfo($boltArchiveFile, PATHINFO_EXTENSION);
 
         try {
-            $request = $client->createRequest('GET', $boltArchiveFile);
-            $request->getEmitter()->on('progress', $downloadCallback);
-            $response = $client->send($request);
+            $response = $client->get($boltArchiveFile->getPath(), ['progress' => $downloadCallback]);
         } catch (ClientException $e) {
             if ('new' === $this->getName() && ($e->getCode() === 403 || $e->getCode() === 404)) {
                 throw new \RuntimeException(sprintf(
@@ -225,7 +221,7 @@ abstract class DownloadCommand extends Command
         }
 
         try {
-            $handler = Utils::getDefaultHandler();
+            $handler = \GuzzleHttp\choose_handler();
         } catch (\RuntimeException $e) {
             throw new \RuntimeException('The Bolt installer requires the php-curl extension or the allow_url_fopen ini setting.');
         }
