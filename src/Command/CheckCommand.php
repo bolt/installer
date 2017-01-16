@@ -2,10 +2,10 @@
 
 namespace Bolt\Installer\Command;
 
-use Bolt\Installer\Requirement\BoltRequirements;
-use Bolt\Installer\Requirement\PhpIniRequirement;
-use Bolt\Installer\Requirement\Requirement;
-use Bolt\Installer\Requirement\RequirementCollection;
+use Bolt\Requirement\BoltRequirements;
+use Bolt\Requirement\PhpIniRequirement;
+use Bolt\Requirement\Requirement;
+use Bolt\Requirement\RequirementCollection;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Input\InputArgument;

@@ -4,8 +4,53 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "a246ba61592c2effb677c8809aa236b7",
+    "content-hash": "64a45475e6b633004d8ae0d05a44b47a",
     "packages": [
+        {
+            "name": "bolt/requirements",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bolt/requirements.git",
+                "reference": "b95b5890c0b75458eaeb52530b6e13acde1a86e5"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bolt/requirements/zipball/b95b5890c0b75458eaeb52530b6e13acde1a86e5",
+                "reference": "b95b5890c0b75458eaeb52530b6e13acde1a86e5",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.5 || ^7.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Bolt\\Requirement\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Gawain Lynch",
+                    "email": "gawain.lynch@gmail.com"
+                }
+            ],
+            "description": "Requirement definitions for Bolt projects.",
+            "keywords": [
+                "bolt",
+                "cms"
+            ],
+            "time": "2017-01-16 13:48:08"
+        },
         {
             "name": "guzzlehttp/guzzle",
             "version": "5.3.1",
@@ -643,7 +688,9 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "bolt/requirements": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
