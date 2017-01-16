@@ -5,6 +5,7 @@ namespace Bolt\Installer\Command;
 use Bolt\Installer\Application;
 use Bolt\Installer\Exception\AbortException;
 use Bolt\Installer\Manager\ComposerManager;
+use Bolt\Installer\Urls;
 use Bolt\Requirement\BoltRequirements;
 use Bolt\Requirement\Requirement;
 use Distill\Distill;
@@ -79,7 +80,7 @@ abstract class DownloadCommand extends Command
         $this->output = $output;
         $this->fs = new Filesystem();
 
-        $this->latestInstallerVersion = trim($this->getUrlContents(Application::VERSIONS_URL));
+        $this->latestInstallerVersion = trim($this->getUrlContents(Urls::INSTALLER_LATEST_VER));
         $this->localInstallerVersion = $this->getApplication()->getVersion();
 
         $this->enableSignalHandler();
@@ -357,7 +358,7 @@ abstract class DownloadCommand extends Command
                 $client = $this->getGuzzleClient();
 
                 $response = $client->get(sprintf(
-                    'https://raw.githubusercontent.com/bolt/composer-install/v%s/.gitignore',
+                    Urls::GIT_IGNORE,
                     $this->getInstalledBoltVersion()
                 ));
 

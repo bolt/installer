@@ -4,6 +4,7 @@ namespace Bolt\Installer\Command;
 
 use Bolt\Installer\Exception\AbortException;
 use Bolt\Installer\Manager\ComposerManager;
+use Bolt\Installer\Urls;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -145,8 +146,8 @@ class DemoCommand extends DownloadCommand
 
         $this->output->writeln(sprintf(
             "    1. Change your current directory to <comment>%s</comment>\n\n" .
-            "    2. Execute the <comment>php app/console %s</comment> command to run the demo application.\n\n" .
-            "    3. Browse to the <comment>http://localhost:8000</comment> URL to see the demo application in action.\n\n",
+            "    2. Execute the <comment>php app/nut %s</comment> command to run the demo application.\n\n" .
+            "    3. Browse to the <comment>http://0.0.0.0:8000</comment> URL to see the demo application in action.\n\n",
             $this->projectDir, $serverRunCommand
         ));
 
@@ -166,6 +167,6 @@ class DemoCommand extends DownloadCommand
      */
     protected function getRemoteFileUrl()
     {
-        return 'https://bolt.cm/distraibution/download?v=';
+        return Urls::REMOTE_DEMO_FILE;
     }
 }

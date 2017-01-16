@@ -4,6 +4,7 @@ namespace Bolt\Installer\Command;
 
 use Bolt\Installer\Exception\AbortException;
 use Bolt\Installer\Manager\ComposerManager;
+use Bolt\Installer\Urls;
 use GuzzleHttp\Exception\ClientException;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -261,7 +262,7 @@ class NewCommand extends DownloadCommand
         }
         $this->getRemoteVersions();
 
-        return sprintf('https://github.com/bolt/bolt/releases/download/v%s/bolt-%s', $this->majorMinorPatchVersion, $this->majorMinorPatchVersion);
+        return sprintf(Urls::REMOTE_FILE, $this->majorMinorPatchVersion, $this->majorMinorPatchVersion);
     }
 
     /**
@@ -272,12 +273,13 @@ class NewCommand extends DownloadCommand
         $client = $this->getGuzzleClient();
 
         try {
-            $response = $client->get('https://get.bolt.cm/versions.json');
+            $response = $client->get(Urls::REMOTE_VERSIONS);
         } catch (ClientException $e) {
 
             throw new \RuntimeException(sprintf(
-                "There was an error downloading %s from https://get.bolt.cm/versions.json:\n%s",
+                "There was an error downloading %s from %s:\n%s",
                 $this->getDownloadedApplicationType(),
+                Urls::REMOTE_VERSIONS,
                 $e->getMessage()
             ), null, $e);
         }

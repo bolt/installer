@@ -2,6 +2,7 @@
 
 namespace Bolt\Installer\Command;
 
+use Bolt\Installer\Urls;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -66,7 +67,7 @@ class SelfUpdateCommand extends DownloadCommand
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
         parent::initialize($input, $output);
-        $this->remoteInstallerFile = 'http://bolt.cm/installer';
+        $this->remoteInstallerFile = Urls::INSTALLER_FILE;
         $this->currentInstallerFile = realpath($_SERVER['argv'][0]) ?: $_SERVER['argv'][0];
         $this->tempDir = sys_get_temp_dir();
         $this->currentInstallerBackupFile = basename($this->currentInstallerFile, '.phar') . '-backup.phar';
@@ -229,6 +230,6 @@ class SelfUpdateCommand extends DownloadCommand
      */
     protected function getRemoteFileUrl()
     {
-        return 'https://bolt.cm/installer';
+        return Urls::INSTALLER_FILE;
     }
 }
