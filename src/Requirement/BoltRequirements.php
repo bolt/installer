@@ -71,22 +71,20 @@ class BoltRequirements extends RequirementCollection
         );
 
         $cacheDir = is_dir($this->checkPath . '/var/cache') ? $this->checkPath . '/var/cache' :
-            $this->checkPath . '/cache';
+            $this->checkPath . '/app/cache';
 
         $this->addRequirement(
             is_writable($cacheDir),
             'app/cache/ or var/cache/ directory must be writable',
             'Change the permissions of either "<strong>app/cache/</strong>" or  "<strong>var/cache/</strong>" directory so that the web server can write into it.'
         );
-
-        $logsDir = is_dir($this->checkPath . '/var/logs') ? $this->checkPath . '/var/logs' : $this->checkPath . '/logs';
-
+/*
         $this->addRequirement(
-            is_writable($logsDir),
+            is_writable($this->checkPath . '/var/logs'),
             'app/logs/ or var/logs/ directory must be writable',
             'Change the permissions of either "<strong>app/logs/</strong>" or  "<strong>var/logs/</strong>" directory so that the web server can write into it.'
         );
-
+*/
         if (version_compare($installedPhpVersion, '7.0.0', '<')) {
             $this->addPhpIniRequirement(
                 'date.timezone',
