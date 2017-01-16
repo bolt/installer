@@ -1,5 +1,15 @@
 {
-    "directories": ["src/"],
+    "alias": "bolt",
+    "chmod": "0755",
+    "compactors": [
+        "Herrera\\Box\\Compactor\\Json",
+        "Herrera\\Box\\Compactor\\Php"
+    ],
+    "compression": "GZ",
+    "directories": [
+        "src",
+        "web"
+    ],
     "finder": [
         {
             "name": "*.php",
@@ -12,17 +22,14 @@
                 "tests",
                 "yaml"
             ],
-            "in": "vendor"
+            "in": [
+                "vendor"
+            ]
         }
     ],
-    "compactors": [
-        "Herrera\\Box\\Compactor\\Json",
-        "Herrera\\Box\\Compactor\\Php"
-    ],
-    "compression": "GZ",
     "git-version": "package_version",
-    "main": "bin/bolt",
+    "main": "bin\/bolt",
     "output": "bolt.phar",
     "stub": true,
-    "chmod": "0755"
+    "web": false
 }
