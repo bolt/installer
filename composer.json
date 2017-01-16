@@ -21,7 +21,7 @@
     },
     "require": {
         "bolt/requirements": "^1.0@dev",
-        "guzzlehttp/guzzle": "^5.3.1",
+        "guzzlehttp/guzzle": "^6.2",
         "php": "^5.5 || ^7.0",
         "raulfraile/distill": "~0.9,!=0.9.3,!=0.9.4",
         "symfony/console": "^2.8",
