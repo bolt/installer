@@ -36,6 +36,10 @@ if (!isset($_SERVER['PATH']) && isset($_SERVER['Path'])) {
     $_SERVER['PATH'] = $_SERVER['Path'];
 }
 
+if (PHP_SAPI !== 'cli') {
+    return require '../web/index.php';
+}
+
 $app = new Bolt\Installer\Application('Symfony Installer', $appVersion);
 $app->add(new Bolt\Installer\Command\AboutCommand($appVersion));
 $app->add(new Bolt\Installer\Command\CheckCommand());
