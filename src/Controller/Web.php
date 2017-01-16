@@ -2,9 +2,12 @@
 
 namespace Bolt\Installer\Controller;
 
+use Bolt\Installer\Command;
+use Bolt\Installer\Application;
 use Bolt\Requirement\BoltRequirements;
 use Bolt\Requirement\PhpIniRequirement;
 use Bolt\Requirement\Requirement;
+use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -92,6 +95,19 @@ class Web
     {
         $response = new Response();
         $body = '<h1>Installing</h1>';
+
+        $app = new Application('Symfony Installer', '');
+        $app->add(new Command\AboutCommand(''));
+        $app->add(new Command\CheckCommand());
+        $app->add(new Command\NewCommand());
+        $app->add(new Command\DemoCommand());
+        $app->add(new Command\SelfUpdateCommand());
+
+        $app->setDefaultCommand('about');
+
+        $app->setAutoExit(false);
+        $app->run(new StringInput('new /home/gawain/workspace/Bolt/installer/test-site'));
+        $body .= '<p>Installed Bolt</p>';
 
         $page = $this->getHtml('install.html', 'Bolt Installation', $body);
         $response->setContent($page);
