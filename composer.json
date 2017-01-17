@@ -26,7 +26,8 @@
         "raulfraile/distill": "~0.9,!=0.9.3,!=0.9.4",
         "symfony/console": "^2.8",
         "symfony/filesystem": "^2.8",
-        "symfony/http-foundation": "^2.8"
+        "symfony/http-foundation": "^2.8",
+        "symfony/cache": "^3.2"
     },
     "require-dev": {
         "symfony/process": "^2.8"
