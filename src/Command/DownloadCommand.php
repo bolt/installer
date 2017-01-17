@@ -108,9 +108,57 @@ abstract class DownloadCommand extends Command
             ->getPreferredFile()
         ;
 
+        // store the file in a temporary hidden directory with a random name
+        $this->downloadedFilePath = rtrim(getcwd(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.' . uniqid(time()) . DIRECTORY_SEPARATOR . 'bolt.' . pathinfo($boltArchiveFile, PATHINFO_EXTENSION);
         /** @var ProgressBar|null $progressBar */
         $progressBar = null;
-        $downloadCallback = function ($downloadSize, $downloaded, $uploadSize, $uploaded) use (&$progressBar) {
+        $downloadCallback = $this->getDownloadCallback($progressBar);
+        $client = $this->getGuzzleClient();
+
+        try {
+            $response = $client->get($boltArchiveFile->getPath(), ['progress' => $downloadCallback]);
+        } catch (ClientException $e) {
+            if ('new' === $this->getName() && ($e->getCode() === 403 || $e->getCode() === 404)) {
+                throw new \RuntimeException(sprintf(
+                    "The selected version (%s) cannot be installed because it does not exist.\n" .
+                    "Execute the following command to install the latest stable Bolt release:\n" .
+                    '%s new %s',
+                    $this->version,
+                    $_SERVER['PHP_SELF'],
+                    str_replace(getcwd() . DIRECTORY_SEPARATOR, '', $this->projectDir)
+                ));
+            } else {
+                throw new \RuntimeException(sprintf(
+                    "There was an error downloading %s from bolt.cm server:\n%s",
+                    $this->getDownloadedApplicationType(),
+                    $e->getMessage()
+                ), null, $e);
+            }
+        }
+
+        $this->fs->dumpFile($this->downloadedFilePath, $response->getBody());
+
+        if (null !== $progressBar) {
+            $progressBar->finish();
+            $this->output->writeln("\n");
+        }
+
+        return $this;
+    }
+
+    /**
+     * Return a lazy ProgressBar object to pass to Guzzle.
+     *
+     * NOTE: Putting this in a Container presently causes flashing of the
+     * progress bar on some terminals.
+     *
+     * @param ProgressBar|null $progressBar
+     *
+     * @return callable
+     */
+    protected function getDownloadCallback(&$progressBar)
+    {
+        return function ($downloadSize, $downloaded, $uploadSize, $uploaded) use (&$progressBar) {
             $progressTotal = $downloadSize ?: $uploadSize;
             $progressCurrent = $downloaded ?: $uploaded;
 
@@ -143,41 +191,6 @@ abstract class DownloadCommand extends Command
 
             $progressBar->setProgress($progressCurrent);
         };
-
-        $client = $this->getGuzzleClient();
-
-        // store the file in a temporary hidden directory with a random name
-        $this->downloadedFilePath = rtrim(getcwd(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.' . uniqid(time()) . DIRECTORY_SEPARATOR . 'bolt.' . pathinfo($boltArchiveFile, PATHINFO_EXTENSION);
-
-        try {
-            $response = $client->get($boltArchiveFile->getPath(), ['progress' => $downloadCallback]);
-        } catch (ClientException $e) {
-            if ('new' === $this->getName() && ($e->getCode() === 403 || $e->getCode() === 404)) {
-                throw new \RuntimeException(sprintf(
-                    "The selected version (%s) cannot be installed because it does not exist.\n" .
-                    "Execute the following command to install the latest stable Bolt release:\n" .
-                    '%s new %s',
-                    $this->version,
-                    $_SERVER['PHP_SELF'],
-                    str_replace(getcwd() . DIRECTORY_SEPARATOR, '', $this->projectDir)
-                ));
-            } else {
-                throw new \RuntimeException(sprintf(
-                    "There was an error downloading %s from bolt.cm server:\n%s",
-                    $this->getDownloadedApplicationType(),
-                    $e->getMessage()
-                ), null, $e);
-            }
-        }
-
-        $this->fs->dumpFile($this->downloadedFilePath, $response->getBody());
-
-        if (null !== $progressBar) {
-            $progressBar->finish();
-            $this->output->writeln("\n");
-        }
-
-        return $this;
     }
 
     /**
