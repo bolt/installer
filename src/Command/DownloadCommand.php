@@ -16,6 +16,7 @@ use Distill\Format\Composed\TarGz;
 use Distill\Strategy\MinimumSize;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\RequestOptions;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Helper;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -97,6 +98,7 @@ abstract class DownloadCommand extends Command
      */
     protected function download()
     {
+        $remoteUrl = $this->getRemoteFileUrl();
         $this->output->writeln(sprintf("\n Downloading %s...\n", $this->getDownloadedApplicationType()));
 
         // decide which is the best compressed version to download
@@ -104,9 +106,12 @@ abstract class DownloadCommand extends Command
         $boltArchiveFile = $distill
             ->getChooser()
             ->setStrategy(new MinimumSize())
-            ->addFilesWithDifferentExtensions($this->getRemoteFileUrl(), ['tar.gz', 'zip'])
+            ->addFilesWithDifferentExtensions($remoteUrl, ['tar.gz', 'zip'])
             ->getPreferredFile()
         ;
+        if ($this->output->getVerbosity() |~ OutputInterface::VERBOSITY_VERBOSE) {
+            $this->output->writeln(sprintf("<info> — Fetching %s</info>\n", $boltArchiveFile->getPath()));
+        }
 
         // store the file in a temporary hidden directory with a random name
         $this->downloadedFilePath = rtrim(getcwd(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.' . uniqid(time()) . DIRECTORY_SEPARATOR . 'bolt.' . pathinfo($boltArchiveFile, PATHINFO_EXTENSION);
@@ -114,9 +119,25 @@ abstract class DownloadCommand extends Command
         $progressBar = null;
         $downloadCallback = $this->getDownloadCallback($progressBar);
         $client = $this->getGuzzleClient();
+        $options = [
+            RequestOptions::ALLOW_REDIRECTS => true,
+            RequestOptions::PROGRESS        => $downloadCallback,
+            RequestOptions::SYNCHRONOUS     => true,
+        ];
 
         try {
-            $response = $client->get($boltArchiveFile->getPath(), ['progress' => $downloadCallback]);
+            $fileUrl = $boltArchiveFile->getPath();
+            $response = $client->get($fileUrl, $options);
+
+            if ($response->getStatusCode() === 302) {
+                // GitHub gives a 302 that Guzzle is currently failing to follow
+                $location = $response->getHeader('Location');
+                $location = reset($location);
+                if ($this->output->getVerbosity() |~ OutputInterface::VERBOSITY_VERBOSE) {
+                    $this->output->writeln(sprintf("<info> — Redirected to %s</info>\n", $location));
+                }
+                $response = $client->get($location, $options);
+            }
         } catch (ClientException $e) {
             if ('new' === $this->getName() && ($e->getCode() === 403 || $e->getCode() === 404)) {
                 throw new \RuntimeException(sprintf(
@@ -136,7 +157,8 @@ abstract class DownloadCommand extends Command
             }
         }
 
-        $this->fs->dumpFile($this->downloadedFilePath, $response->getBody());
+        $responseData = $response->getBody();
+        $this->fs->dumpFile($this->downloadedFilePath, $responseData);
 
         if (null !== $progressBar) {
             $progressBar->finish();

@@ -9,6 +9,7 @@ use GuzzleHttp\Exception\ClientException;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Cache;
 
 /**
  * This command creates new Bolt projects for the given Bolt version.
@@ -266,26 +267,55 @@ class NewCommand extends DownloadCommand
     }
 
     /**
+     * @param \Exception $e
+     *
+     * @return \RuntimeException
+     */
+    private function getRemoteVersionsExceptionMessage(\Exception $e)
+    {
+        return new \RuntimeException(sprintf(
+            "There was an error downloading %s version data from %s:\n%s",
+            $this->getDownloadedApplicationType(),
+            Urls::REMOTE_VERSIONS,
+            $e->getMessage()
+        ), null, $e);
+    }
+
+    /**
      * Determine best available version.
      */
     private function getRemoteVersions()
     {
-        $client = $this->getGuzzleClient();
+        $this->output->writeln("\n Checking available versions...\n");
+        $cache = new Cache\Adapter\FilesystemAdapter('guzzle', 60, '/tmp/cache');
+        $versionsCacheItem = $cache->getItem('json.remote_versions');
+        if (!$versionsCacheItem->isHit()) {
+            $client = $this->getGuzzleClient();
+            if ($this->output->getVerbosity() |~ OutputInterface::VERBOSITY_VERBOSE) {
+                $this->output->writeln(sprintf("<info> — Fectching %s</info>", Urls::REMOTE_VERSIONS));
+            }
 
-        try {
-            $response = $client->get(Urls::REMOTE_VERSIONS);
-        } catch (ClientException $e) {
-
-            throw new \RuntimeException(sprintf(
-                "There was an error downloading %s from %s:\n%s",
-                $this->getDownloadedApplicationType(),
-                Urls::REMOTE_VERSIONS,
-                $e->getMessage()
-            ), null, $e);
+            try {
+                $response = $client->get(Urls::REMOTE_VERSIONS);
+                $json = $response->getBody()->getContents();
+                $versions = \GuzzleHttp\json_decode($json);
+                $versionsCacheItem->set($json);
+            } catch (ClientException $e) {
+                throw new \RuntimeException($this->getRemoteVersionsExceptionMessage($e));
+            } catch (\InvalidArgumentException $e) {
+                throw new \RuntimeException($this->getRemoteVersionsExceptionMessage($e));
+            }
+            $cache->save($versionsCacheItem);
+        } else {
+            if ($this->output->getVerbosity() |~ OutputInterface::VERBOSITY_VERBOSE) {
+                $this->output->writeln(sprintf("<info> — Using cached version of %s</info>", Urls::REMOTE_VERSIONS));
+            }
+            try {
+                $versions = \GuzzleHttp\json_decode($versionsCacheItem->get());
+            } catch (\InvalidArgumentException $e) {
+                throw new \RuntimeException($this->getRemoteVersionsExceptionMessage($e));
+            }
         }
-
-        $versions = $response->getBody()->getContents();
-        $versions = json_decode($versions);
 
         $parts = explode('.', $this->version);
         $majorKey = $parts[0] . '.x';
