@@ -522,9 +522,9 @@ abstract class DownloadCommand extends Command
      *
      * @return bool Whether is Bolt3
      */
-    protected function isBolt4()
+    protected function isBolt3()
     {
-        return '4' === $this->version[0] || 'latest' === $this->version;
+        return '3' === $this->version[0] || 'latest' === $this->version;
     }
 
     /**

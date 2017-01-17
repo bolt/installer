@@ -148,7 +148,7 @@ class NewCommand extends DownloadCommand
                 $this->output->writeln(' * ' . $helpText);
             }
 
-            $checkFile = $this->isBolt4() ? 'bin/symfony_requirements' : 'app/check.php';
+            $checkFile = $this->isBolt3() ? 'bin/symfony_requirements' : 'app/check.php';
 
             $this->output->writeln(sprintf(
                 " After fixing these issues, re-check Bolt requirements executing this command:\n\n" .
@@ -164,7 +164,7 @@ class NewCommand extends DownloadCommand
             ));
         }
 
-        $consoleDir = ($this->isBolt4() ? 'bin' : 'app');
+        $consoleDir = ($this->isBolt3() ? 'bin' : 'app');
         $serverRunCommand = version_compare($this->version, '2.6.0', '>=') && extension_loaded('pcntl') ? 'server:start' : 'server:run';
 
         $this->output->writeln(sprintf(
