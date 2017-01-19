@@ -10,8 +10,9 @@ namespace Bolt\Installer;
 class Urls
 {
     const REMOTE_VERSIONS = 'https://get.bolt.cm/versions.json';
-    const REMOTE_FILE = 'https://github.com/bolt/bolt/releases/download/v%s/bolt-%s';
-    const REMOTE_DEMO_FILE = 'https://bolt.cm/distribution/demo?v=';
+    const REMOTE_LATEST = 'https://get.bolt.cm/latest';
+    const REMOTE_FILE = 'https://get.bolt.cm/download/%s/%s?php=%s';
+    const REMOTE_DEMO_FILE = 'https://get.bolt.cm/demo?v=';
 
     const GIT_IGNORE = 'https://raw.githubusercontent.com/bolt/composer-install/v%s/.gitignore';
 

@@ -109,9 +109,7 @@ abstract class DownloadCommand extends Command
             ->addFilesWithDifferentExtensions($remoteUrl, ['tar.gz', 'zip'])
             ->getPreferredFile()
         ;
-        if ($this->output->getVerbosity() |~ OutputInterface::VERBOSITY_VERBOSE) {
-            $this->output->writeln(sprintf("<info> — Fetching %s</info>\n", $boltArchiveFile->getPath()));
-        }
+        $this->writeDebug(sprintf("<info> — Fetching %s</info>\n", $boltArchiveFile->getPath()));
 
         // store the file in a temporary hidden directory with a random name
         $this->downloadedFilePath = rtrim(getcwd(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.' . uniqid(time()) . DIRECTORY_SEPARATOR . 'bolt.' . pathinfo($boltArchiveFile, PATHINFO_EXTENSION);
@@ -133,9 +131,7 @@ abstract class DownloadCommand extends Command
                 // GitHub gives a 302 that Guzzle is currently failing to follow
                 $location = $response->getHeader('Location');
                 $location = reset($location);
-                if ($this->output->getVerbosity() |~ OutputInterface::VERBOSITY_VERBOSE) {
-                    $this->output->writeln(sprintf("<info> — Redirected to %s</info>\n", $location));
-                }
+                $this->writeDebug(sprintf("<info> — Redirected to %s</info>\n", $location));
                 $response = $client->get($location, $options);
             }
         } catch (ClientException $e) {
@@ -252,7 +248,7 @@ abstract class DownloadCommand extends Command
             $defaults['proxy'] = !empty($_SERVER['http_proxy']) ? $_SERVER['http_proxy'] : $_SERVER['HTTP_PROXY'];
         }
 
-        if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG) {
+        if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
             $defaults['debug'] = true;
         }
 
@@ -571,6 +567,16 @@ abstract class DownloadCommand extends Command
         $client = $this->getGuzzleClient();
 
         return $client->get($url)->getBody()->getContents();
+    }
+
+    /**
+     * @param string $message
+     */
+    protected function writeDebug($message)
+    {
+        if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
+            $this->output->writeln($message);
+        }
     }
 
     /**

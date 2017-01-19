@@ -259,11 +259,26 @@ class NewCommand extends DownloadCommand
     protected function getRemoteFileUrl()
     {
         if ($this->version === 'latest') {
-            return 'https://bolt.cm/distribution/bolt-' . $this->version;
+            $client = $this->getGuzzleClient();
+            $this->writeDebug(sprintf("<info> — Fetching %s</info>", Urls::REMOTE_LATEST));
+
+            try {
+                $response = $client->get(Urls::REMOTE_LATEST);
+            } catch (ClientException $e) {
+                throw new \RuntimeException($this->getRemoteVersionsExceptionMessage($e));
+            }
+            $majorMinorPatchVersion = $response->getBody()->getContents();
+            $parts = explode('.', $majorMinorPatchVersion);
+            if (count($parts) < 3) {
+                throw new \RuntimeException(sprintf('There was an error getting latest version data from %s', Urls::REMOTE_LATEST));
+            }
+            $majorMinorVersion = $parts[0] . '.' . $parts[1];
+
+            return sprintf(Urls::REMOTE_FILE, $majorMinorVersion, $majorMinorPatchVersion, PHP_VERSION_ID);
         }
         $this->getRemoteVersions();
 
-        return sprintf(Urls::REMOTE_FILE, $this->majorMinorPatchVersion, $this->majorMinorPatchVersion);
+        return sprintf(Urls::REMOTE_FILE, $this->majorMinorVersion, $this->majorMinorPatchVersion, PHP_VERSION_ID);
     }
 
     /**
@@ -291,9 +306,7 @@ class NewCommand extends DownloadCommand
         $versionsCacheItem = $cache->getItem('json.remote_versions');
         if (!$versionsCacheItem->isHit()) {
             $client = $this->getGuzzleClient();
-            if ($this->output->getVerbosity() |~ OutputInterface::VERBOSITY_VERBOSE) {
-                $this->output->writeln(sprintf("<info> — Fectching %s</info>", Urls::REMOTE_VERSIONS));
-            }
+            $this->writeDebug(sprintf("<info> — Fetching %s</info>", Urls::REMOTE_VERSIONS));
 
             try {
                 $response = $client->get(Urls::REMOTE_VERSIONS);
@@ -307,9 +320,8 @@ class NewCommand extends DownloadCommand
             }
             $cache->save($versionsCacheItem);
         } else {
-            if ($this->output->getVerbosity() |~ OutputInterface::VERBOSITY_VERBOSE) {
-                $this->output->writeln(sprintf("<info> — Using cached version of %s</info>", Urls::REMOTE_VERSIONS));
-            }
+            $this->writeDebug(sprintf("<info> — Using cached version of %s</info>", Urls::REMOTE_VERSIONS));
+
             try {
                 $versions = \GuzzleHttp\json_decode($versionsCacheItem->get());
             } catch (\InvalidArgumentException $e) {
