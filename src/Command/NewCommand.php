@@ -9,7 +9,6 @@ use GuzzleHttp\Exception\ClientException;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Cache;
 
 /**
  * This command creates new Bolt projects for the given Bolt version.
@@ -302,8 +301,7 @@ class NewCommand extends DownloadCommand
     private function getRemoteVersions()
     {
         $this->output->writeln("\n Checking available versions...\n");
-        $cache = new Cache\Adapter\FilesystemAdapter('guzzle', 60, '/tmp/cache');
-        $versionsCacheItem = $cache->getItem('json.remote_versions');
+        $versionsCacheItem = $this->getCache()->getItem('json.remote_versions');
         if (!$versionsCacheItem->isHit()) {
             $client = $this->getGuzzleClient();
             $this->writeDebug(sprintf("<info> — Fetching %s</info>", Urls::REMOTE_VERSIONS));
@@ -318,7 +316,7 @@ class NewCommand extends DownloadCommand
             } catch (\InvalidArgumentException $e) {
                 throw new \RuntimeException($this->getRemoteVersionsExceptionMessage($e));
             }
-            $cache->save($versionsCacheItem);
+            $this->getCache()->save($versionsCacheItem);
         } else {
             $this->writeDebug(sprintf("<info> — Using cached version of %s</info>", Urls::REMOTE_VERSIONS));
 

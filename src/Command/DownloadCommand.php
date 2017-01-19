@@ -2,7 +2,6 @@
 
 namespace Bolt\Installer\Command;
 
-use Bolt\Installer\Application;
 use Bolt\Installer\Exception\AbortException;
 use Bolt\Installer\Manager\ComposerManager;
 use Bolt\Installer\Urls;
@@ -17,6 +16,7 @@ use Distill\Strategy\MinimumSize;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\RequestOptions;
+use Symfony\Component\Cache;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Helper;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -57,6 +57,9 @@ abstract class DownloadCommand extends Command
     protected $requirementsErrors = [];
     /** @var ComposerManager */
     protected $composerManager;
+
+    /** @var Cache\Adapter\AbstractAdapter */
+    private $cache;
 
     /**
      * Returns the type of the downloaded application in a human readable format.
@@ -577,6 +580,22 @@ abstract class DownloadCommand extends Command
         if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
             $this->output->writeln($message);
         }
+    }
+
+    /**
+     * @return Cache\Adapter\AbstractAdapter
+     */
+    protected function getCache()
+    {
+        if ($this->cache !== null) {
+            return $this->cache;
+        } elseif (is_writable('/tmp/.bolt-installer')) {
+            $this->cache = new Cache\Adapter\FilesystemAdapter('guzzle', 60, '/tmp/.bolt-installer');
+        } else {
+            $this->cache = new Cache\Adapter\NullAdapter();
+        }
+
+        return $this->cache;
     }
 
     /**
