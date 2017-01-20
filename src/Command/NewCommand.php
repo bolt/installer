@@ -8,6 +8,7 @@ use Bolt\Installer\Urls;
 use GuzzleHttp\Exception\ClientException;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -33,6 +34,7 @@ class NewCommand extends DownloadCommand
             ->setDescription('Creates a new Bolt project.')
             ->addArgument('directory', InputArgument::REQUIRED, 'Directory where the new project will be created.')
             ->addArgument('version', InputArgument::OPTIONAL, 'The Bolt version to be installed (defaults to the latest stable version).', 'latest')
+            ->addOption('flat', null, InputOption::VALUE_NONE, 'Install the "flat webroot" Bolt build.')
         ;
     }
 
@@ -47,8 +49,8 @@ class NewCommand extends DownloadCommand
         $this->version = trim($input->getArgument('version'));
         $this->projectDir = $this->fs->isAbsolutePath($directory) ? $directory : getcwd() . DIRECTORY_SEPARATOR . $directory;
         $this->projectName = basename($directory);
-
         $this->composerManager = new ComposerManager($this->projectDir);
+        $this->useFlat = $input->getOption('flat');
     }
 
     /**
@@ -257,6 +259,9 @@ class NewCommand extends DownloadCommand
      */
     protected function getRemoteFileUrl()
     {
+        $build = $this->useFlat ? true : false;
+        $queryParams = http_build_query(['php' => PHP_VERSION_ID, 'flat' => $this->useFlat]);
+
         if ($this->version === 'latest') {
             $client = $this->getGuzzleClient();
             $this->writeDebug(sprintf("<info> — Fetching %s</info>", Urls::REMOTE_LATEST));
@@ -273,11 +278,11 @@ class NewCommand extends DownloadCommand
             }
             $majorMinorVersion = $parts[0] . '.' . $parts[1];
 
-            return sprintf(Urls::REMOTE_FILE, $majorMinorVersion, $majorMinorPatchVersion, PHP_VERSION_ID);
+            return sprintf(Urls::REMOTE_FILE, $majorMinorVersion, $majorMinorPatchVersion, $queryParams);
         }
         $this->getRemoteVersions();
 
-        return sprintf(Urls::REMOTE_FILE, $this->majorMinorVersion, $this->majorMinorPatchVersion, PHP_VERSION_ID);
+        return sprintf(Urls::REMOTE_FILE, $this->majorMinorVersion, $this->majorMinorPatchVersion, $queryParams);
     }
 
     /**

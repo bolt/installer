@@ -59,6 +59,8 @@ abstract class DownloadCommand extends Command
     protected $requirementsErrors = [];
     /** @var ComposerManager */
     protected $composerManager;
+    /** @var bool */
+    protected $useFlat;
 
     /** @var Cache\Adapter\AbstractAdapter */
     private $cache;
@@ -115,14 +117,13 @@ abstract class DownloadCommand extends Command
             ->addFilesWithDifferentExtensions($remoteUrl, ['tar.gz', 'zip'])
             ->getPreferredFile()
         ;
-        $this->writeDebug(sprintf("<info> — Fetching %s</info>\n", $boltArchiveFile->getPath()));
+        $this->writeDebug(sprintf("<info> — Fetching %s</info>\n", $remoteUrl));
 
         // store the file in a temporary hidden directory with a random name
         $this->downloadedFilePath = rtrim(getcwd(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.' . uniqid(time()) . DIRECTORY_SEPARATOR . 'bolt.' . pathinfo($boltArchiveFile, PATHINFO_EXTENSION);
         /** @var ProgressBar|null $progressBar */
         $progressBar = null;
         $downloadCallback = $this->getDownloadCallback($progressBar);
-        $client = $this->getGuzzleClient();
         $options = [
             RequestOptions::ALLOW_REDIRECTS => true,
             RequestOptions::PROGRESS        => $downloadCallback,
@@ -130,7 +131,7 @@ abstract class DownloadCommand extends Command
         ];
 
         try {
-            $fileUrl = $boltArchiveFile->getPath();
+            $fileUrl = $remoteUrl;
             $response = $this->getUrlContents($fileUrl, $options);
         } catch (ClientException $e) {
             if ('new' === $this->getName() && ($e->getCode() === 403 || $e->getCode() === 404)) {
