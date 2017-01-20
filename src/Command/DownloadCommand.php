@@ -61,6 +61,8 @@ abstract class DownloadCommand extends Command
     protected $composerManager;
     /** @var bool */
     protected $useFlat;
+    /** @var bool */
+    protected $webInstall;
 
     /** @var Cache\Adapter\AbstractAdapter */
     private $cache;
@@ -93,6 +95,26 @@ abstract class DownloadCommand extends Command
         $this->localInstallerVersion = $this->getApplication()->getVersion();
 
         $this->enableSignalHandler();
+    }
+
+    /**
+     * @return bool
+     */
+    public function isWebInstall()
+    {
+        return $this->webInstall;
+    }
+
+    /**
+     * @param bool $webInstall
+     *
+     * @return DownloadCommand
+     */
+    public function setWebInstall($webInstall)
+    {
+        $this->webInstall = $webInstall;
+
+        return $this;
     }
 
     /**
@@ -193,7 +215,6 @@ abstract class DownloadCommand extends Command
 
                 $progressBar = new ProgressBar($this->output, $progressTotal);
                 $progressBar->setFormat('%current%/%max% %bar%  %percent:3s%%');
-                $progressBar->setRedrawFrequency(max(1, floor($progressTotal / 1000)));
                 $progressBar->setBarWidth(60);
 
                 if (!defined('PHP_WINDOWS_VERSION_BUILD')) {
@@ -202,10 +223,13 @@ abstract class DownloadCommand extends Command
                     $progressBar->setBarCharacter('▓'); // dark shade character \u2593
                 }
 
-                $progressBar->start();
+                if (!$this->webInstall) {
+                    $progressBar->start();
+                }
             }
-
-            $progressBar->setProgress($progressCurrent);
+            if (!$this->webInstall) {
+                $progressBar->setProgress($progressCurrent);
+            }
         };
     }
 
@@ -218,6 +242,9 @@ abstract class DownloadCommand extends Command
      */
     protected function checkProjectName()
     {
+        if ($this->webInstall && is_dir($this->projectDir) && !is_file($this->projectDir . '/index.php')) {
+            return $this;
+        }
         if (is_dir($this->projectDir) && !$this->isEmptyDirectory($this->projectDir)) {
             throw new \RuntimeException(sprintf(
                 "There is already a '%s' project in this directory (%s).\n" .

@@ -2,8 +2,9 @@
 
 namespace Bolt\Installer\Controller;
 
-use Bolt\Installer\Command;
 use Bolt\Installer\Application;
+use Bolt\Installer\Command;
+use Bolt\Installer\Output\BufferedArrayOutput;
 use Bolt\Requirement\BoltRequirements;
 use Bolt\Requirement\PhpIniRequirement;
 use Bolt\Requirement\Requirement;
@@ -93,39 +94,64 @@ class Web
      */
     private function install()
     {
+        $phar = $this->getPharFile();
+        $target = getcwd();
         $response = new Response();
         $body = '<h1>Installing</h1>';
 
-        $app = new Application('Symfony Installer', '');
-        $app->add(new Command\AboutCommand(''));
+        $app = new Application('Bolt Installer', '');
         $app->add(new Command\CheckCommand());
-        $app->add(new Command\NewCommand());
-        $app->add(new Command\DemoCommand());
+        $app->add((new Command\NewCommand())->setWebInstall(true));
         $app->add(new Command\SelfUpdateCommand());
-
         $app->setDefaultCommand('about');
-
         $app->setAutoExit(false);
-        $app->run(new StringInput('new /home/gawain/workspace/Bolt/installer/test-site'));
-        $body .= '<p>Installed Bolt</p>';
+        $output = new BufferedArrayOutput();
 
-        $page = $this->getHtml('install.html', 'Bolt Installation', $body);
+        $template = $this->getHtml('install.html');
+
+        $result = $app->run(new StringInput('new ' . $target), $output);
+        //if ((int) $result > 0) {
+        //    $this->setPharFile($phar);
+        //}
+
+        $body .= "<p>Installed Bolt in $target</p>";
+
+        foreach ($output->fetch() as $message) {
+            $body .= sprintf('<p>%s</p>', nl2br($message));
+        }
+
+        $page = sprintf($template, 'Bolt Installation', $body);
         $response->setContent($page);
 
         return $response->send();
     }
 
     /**
+     * @return \Phar
+     */
+    private function getPharFile()
+    {
+        $target = getcwd();
+        $pharFile = sprintf('%s/%s', $target, basename($_SERVER['PHP_SELF']));
+
+        return new \Phar($pharFile, \RecursiveDirectoryIterator::FOLLOW_SYMLINKS, 'bolt');
+    }
+
+    private function setPharFile(\Phar $phar)
+    {
+        $target = getcwd();
+        $pharFile = sprintf('%s/%s', $target, basename($_SERVER['PHP_SELF']));
+
+        file_put_contents($pharFile, $phar);
+    }
+
+    /**
      * @param string $template
-     * @param string $title
-     * @param string $body
      *
      * @return string
      */
-    private function getHtml($template, $title, $body)
+    private function getHtml($template)
     {
-        $html = file_get_contents(sprintf('phar://bolt/web/%s', $template));
-
-        return sprintf($html, $title, $body);
+        return file_get_contents(sprintf('phar://bolt/web/%s', $template));
     }
 }
