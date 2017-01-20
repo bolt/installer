@@ -16,21 +16,6 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class AboutCommand extends Command
 {
-    /** @var string The current version of the Bolt installer */
-    private $appVersion;
-
-    /**
-     * Constructor.
-     *
-     * @param string $appVersion The current version of the Bolt installer
-     */
-    public function __construct($appVersion)
-    {
-        parent::__construct();
-
-        $this->appVersion = $appVersion;
-    }
-
     /**
      * {@inheritdoc}
      */
@@ -92,8 +77,8 @@ COMMAND_UPDATE_HELP;
         }
 
         $output->writeln(sprintf($commandHelp,
-            $this->appVersion,
-            str_repeat('=', 20 + strlen($this->appVersion)),
+            $this->$this->getApplication()->getVersion(),
+            str_repeat('=', 20 + strlen($this->getApplication()->getVersion())),
             $this->getExecutedCommand()
         ));
     }

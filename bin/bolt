@@ -29,19 +29,17 @@ require file_exists(__DIR__.'/../vendor/autoload.php')
     ? __DIR__.'/../vendor/autoload.php'
     : __DIR__.'/../../../autoload.php';
 
-$appVersion = '0.2.0-DEV';
-
 // Windows uses Path instead of PATH
 if (!isset($_SERVER['PATH']) && isset($_SERVER['Path'])) {
     $_SERVER['PATH'] = $_SERVER['Path'];
 }
 
-if (PHP_SAPI !== 'cli') {
-    return require '../web/index.php';
+if (PHP_SAPI !== 'cli' && 'phar://' === substr(__DIR__, 0, 7)) {
+    return require 'phar://bolt/web/index.php';
 }
 
-$app = new Bolt\Installer\Application('Symfony Installer', $appVersion);
-$app->add(new Bolt\Installer\Command\AboutCommand($appVersion));
+$app = new Bolt\Installer\Application('Bolt Installer');
+$app->add(new Bolt\Installer\Command\AboutCommand());
 $app->add(new Bolt\Installer\Command\CheckCommand());
 $app->add(new Bolt\Installer\Command\NewCommand());
 $app->add(new Bolt\Installer\Command\DemoCommand());

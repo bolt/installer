@@ -11,4 +11,10 @@ use Symfony\Component\Console\Application as ConsoleApplication;
  */
 class Application extends ConsoleApplication
 {
+    private $version = '0.2.0-DEV';
+
+    public function __construct($name = 'UNKNOWN', $version = null)
+    {
+        parent::__construct($name, $version ?: $this->version);
+    }
 }
