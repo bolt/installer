@@ -21,9 +21,11 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Helper;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\Output;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Intl\Exception\MethodArgumentValueNotImplementedException;
 
 /**
@@ -39,7 +41,7 @@ abstract class DownloadCommand extends Command
 {
     /** @var Filesystem To dump content to a file */
     protected $fs;
-    /** @var OutputInterface To output content */
+    /** @var OutputInterface|Output To output content */
     protected $output;
     /** @var string The project name */
     protected $projectName;
@@ -84,7 +86,8 @@ abstract class DownloadCommand extends Command
         $this->output = $output;
         $this->fs = new Filesystem();
 
-        $this->latestInstallerVersion = trim($this->getUrlContents(Urls::INSTALLER_LATEST_VER));
+        $latestInstallerVersion = $this->getUrlContents(Urls::INSTALLER_LATEST_VER)->getContents();
+        $this->latestInstallerVersion = trim($latestInstallerVersion);
         $this->localInstallerVersion = $this->getApplication()->getVersion();
 
         $this->enableSignalHandler();
@@ -128,15 +131,7 @@ abstract class DownloadCommand extends Command
 
         try {
             $fileUrl = $boltArchiveFile->getPath();
-            $response = $client->get($fileUrl, $options);
-
-            if ($response->getStatusCode() === 302) {
-                // GitHub gives a 302 that Guzzle is currently failing to follow
-                $location = $response->getHeader('Location');
-                $location = reset($location);
-                $this->writeDebug(sprintf("<info> — Redirected to %s</info>\n", $location));
-                $response = $client->get($location, $options);
-            }
+            $response = $this->getUrlContents($fileUrl, $options);
         } catch (ClientException $e) {
             if ('new' === $this->getName() && ($e->getCode() === 403 || $e->getCode() === 404)) {
                 throw new \RuntimeException(sprintf(
@@ -156,8 +151,7 @@ abstract class DownloadCommand extends Command
             }
         }
 
-        $responseData = $response->getBody();
-        $this->fs->dumpFile($this->downloadedFilePath, $responseData);
+        $this->fs->dumpFile($this->downloadedFilePath, $response->getContents());
 
         if (null !== $progressBar) {
             $progressBar->finish();
@@ -561,15 +555,25 @@ abstract class DownloadCommand extends Command
     /**
      * Returns the contents obtained by making a GET request to the given URL.
      *
-     * @param string $url The URL to get the contents from
+     * @param string $url     The URL to get the contents from
+     * @param array  $options Guzzle options
      *
-     * @return string The obtained contents of $url
+     * @return \Psr\Http\Message\StreamInterface The obtained contents of $url
      */
-    protected function getUrlContents($url)
+    protected function getUrlContents($url, array $options = [])
     {
         $client = $this->getGuzzleClient();
+        $response = $client->get($url, $options);
+        $responseCode = $response->getStatusCode();
 
-        return $client->get($url)->getBody()->getContents();
+        if ($responseCode === Response::HTTP_MOVED_PERMANENTLY || $responseCode === Response::HTTP_FOUND) {
+            $location = $response->getHeader('Location');
+            $location = reset($location);
+            $this->writeDebug(sprintf("<info> — Redirected to %s</info>\n", $location));
+            $response = $client->get($location, $options);
+        }
+
+        return $response->getBody();
     }
 
     /**
@@ -577,7 +581,7 @@ abstract class DownloadCommand extends Command
      */
     protected function writeDebug($message)
     {
-        if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
+        if ($this->output->isVerbose()) {
             $this->output->writeln($message);
         }
     }

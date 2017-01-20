@@ -17,7 +17,7 @@ class Urls
     const GIT_IGNORE = 'https://raw.githubusercontent.com/bolt/composer-install/v%s/.gitignore';
 
     const INSTALLER_LATEST_VER = 'https://get.bolt.cm/installer.version';
-    const INSTALLER_FILE = 'http://bolt.cm/installer';
+    const INSTALLER_FILE = 'https://get.bolt.cm/installer';
 
     /**
      * Constructor.

@@ -82,12 +82,12 @@ class SelfUpdateCommand extends DownloadCommand
     {
         $forceUpdate = true === $input->getOption('force-update');
         if (!$forceUpdate && $this->isInstallerUpdated()) {
-            $this->output->writeln(sprintf('// Bolt Installer is <info>already updated</info> to the latest version (%s).', $this->latestInstallerVersion));
+            $this->output->writeln(sprintf(' Bolt Installer is <info>already updated</info> to the latest version (%s).', $this->latestInstallerVersion));
 
-            return;
+            return 0;
         }
 
-        $this->output->writeln(sprintf('// <info>updating</info> Bolt Installer to <info>%s</info> version', $this->latestInstallerVersion));
+        $this->output->writeln(sprintf(' <info>Updating</info> Bolt Installer to <info>%s</info> version', $this->latestInstallerVersion));
 
         try {
             $this
@@ -117,6 +117,8 @@ class SelfUpdateCommand extends DownloadCommand
 
             return 1;
         }
+
+        return 0;
     }
 
     /**
@@ -135,7 +137,7 @@ class SelfUpdateCommand extends DownloadCommand
             throw new IOException('Bolt Installer update failed: the "' . $this->tempDir . '" directory used to download files temporarily could not be written');
         }
 
-        if (false === $newInstaller = $this->getUrlContents($this->remoteInstallerFile)) {
+        if (false === $newInstaller = $this->getUrlContents($this->remoteInstallerFile)->getContents()) {
             throw new \RuntimeException('The new version of the Bolt Installer couldn\'t be downloaded from the server.');
         }
 
@@ -172,6 +174,7 @@ class SelfUpdateCommand extends DownloadCommand
      */
     private function backupCurrentVersion()
     {
+        $this->writeDebug(sprintf("<info> — Backing up %s to %s</info>", $this->currentInstallerFile, $this->currentInstallerBackupFile));
         $this->fs->copy($this->currentInstallerFile, $this->currentInstallerBackupFile, true);
         $this->restorePreviousInstaller = true;
 
@@ -185,6 +188,7 @@ class SelfUpdateCommand extends DownloadCommand
      */
     private function replaceCurrentVersionbyNewVersion()
     {
+        $this->writeDebug(sprintf("<info> — Replacing %s to %s</info>", $this->newInstallerFile, $this->currentInstallerFile));
         $this->fs->copy($this->newInstallerFile, $this->currentInstallerFile, true);
 
         return $this;
