@@ -17,7 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Application extends ConsoleApplication
 {
     /** @var string */
-    private $version = '0.2.0';
+    private $version = '0.3.0-DEV';
     /** @var bool */
     private $web;
 
