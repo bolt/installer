@@ -1,7 +1,7 @@
 <?php
 
 namespace Bolt\Installer\Command;
-
+use Bolt\Installer\Application;
 use Bolt\Installer\Exception\AbortException;
 use Bolt\Installer\Manager\ComposerManager;
 use Bolt\Installer\Urls;
@@ -17,6 +17,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\RequestOptions;
 use Symfony\Component\Cache;
+use Symfony\Component\Console\Application as ConsoleApplication;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Helper;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -64,6 +65,8 @@ abstract class DownloadCommand extends Command
 
     /** @var Cache\Adapter\AbstractAdapter */
     private $cache;
+    /** @var Application */
+    private $application;
 
     /**
      * Returns the type of the downloaded application in a human readable format.
@@ -79,6 +82,23 @@ abstract class DownloadCommand extends Command
      * @return string The absolute URL of the remote file downloaded by the command
      */
     abstract protected function getRemoteFileUrl();
+
+    /**
+     * @return Application
+     */
+    public function getApplication()
+    {
+        return $this->application;
+    }
+
+    /**
+     * @param ConsoleApplication|null $application
+     */
+    public function setApplication(ConsoleApplication $application = null)
+    {
+        $this->application = $application;
+        parent::setApplication($application);
+    }
 
     /**
      * {@inheritdoc}
@@ -540,6 +560,21 @@ abstract class DownloadCommand extends Command
         }
 
         if (!$this->isInstallerUpdated()) {
+            if ($this->getApplication()->isWeb()) {
+                $this->output->writeln(
+                    sprintf(
+                        '<div class="alert callout large"><strong>WARNING </strong> Your Bolt Installer version (%s) is outdated.' .
+                        ' <a href="%s">Download the latest version (%s)</a> and overwrite %s</div>',
+                        $this->localInstallerVersion,
+                        Urls::INSTALLER_FILE,
+                        $this->latestInstallerVersion,
+                        getcwd() . dirname($_SERVER['PHP_SELF'])
+                    )
+                );
+
+                return $this;
+            }
+
             $this->output->writeln(sprintf(
                 "\n <bg=red> WARNING </> Your Bolt Installer version (%s) is outdated.\n" .
                 ' Execute the command "%s selfupdate" to get the latest version (%s).',
@@ -606,6 +641,16 @@ abstract class DownloadCommand extends Command
         }
 
         return $this->cache;
+    }
+
+    /**
+     * @param string $template
+     *
+     * @return string
+     */
+    protected function getHtml($template)
+    {
+        return file_get_contents(sprintf('phar://bolt/web/%s', $template));
     }
 
     /**

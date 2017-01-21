@@ -37,17 +37,22 @@ class Web
         } elseif ($request->query->has('install')) {
             $this->install();
         } else {
-            $response = new Response();
             $body = '';
-            $page = $this->getHtml('index.html', 'Bolt Set-up', $body);
-            $response->setContent($page);
+
+            $template = $this->getHtml('index.html');
+            $page = str_replace('%TITLE%', 'Bolt Set-up', $template);
+            $page = str_replace('%CSS%', file_get_contents('phar://bolt/web/installer.css'), $page);
+            $page = str_replace('%BODY%', $body, $page);
+
+            $response = new Response($page);
             $response->send();
         }
     }
 
     private function check()
     {
-        $response = new Response();
+        $template = $this->getHtml('check.html');
+
         $body = '<h1>Checking</h1>';
 
         $boltRequirements = new BoltRequirements(__DIR__);
@@ -83,7 +88,11 @@ class Web
         }
         $body .= '</ul>';
 
-        $page = $this->getHtml('check.html', 'Bolt System Checks', $body);
+        $page = str_replace('%TITLE%', 'Bolt System Checks', $template);
+        $page = str_replace('%CSS%', file_get_contents('phar://bolt/web/installer.css'), $page);
+        $page = str_replace('%BODY%', $body, $page);
+
+        $response = new Response();
         $response->setContent($page);
 
         return $response->send();
@@ -94,33 +103,38 @@ class Web
      */
     private function install()
     {
+        $app = $this->getConsole();
         $phar = $this->getPharFile();
         $target = getcwd();
-        $response = new Response();
-        $body = '<h1>Installing</h1>';
 
-        $app = new Application('Bolt Installer', '');
-        $app->add(new Command\CheckCommand());
-        $app->add((new Command\NewCommand())->setWebInstall(true));
-        $app->add(new Command\SelfUpdateCommand());
-        $app->setDefaultCommand('about');
-        $app->setAutoExit(false);
+        $body = '<h1>Install Bolt</h1>';
+
         $output = new BufferedArrayOutput();
-
-        $template = $this->getHtml('install.html');
-
-        $result = $app->run(new StringInput('new ' . $target), $output);
-        //if ((int) $result > 0) {
-        //    $this->setPharFile($phar);
-        //}
-
-        $body .= "<p>Installed Bolt in $target</p>";
+        $result = (int) $app->run(new StringInput('new ' . $target), $output);
 
         foreach ($output->fetch() as $message) {
-            $body .= sprintf('<p>%s</p>', nl2br($message));
+            if (strpos($message, 'new') === 0 || trim($message) === '') {
+                continue;
+            }
+            if (strpos($message, 'p>') === false && strpos($message, 'ul>') === false && strpos($message, 'li>') === false) {
+                $$message = nl2br($message);
+            }
+            $body .= sprintf('<p>%s</p>', $message);
         }
 
-        $page = sprintf($template, 'Bolt Installation', $body);
+        if ($result > 0) {
+            try {
+                $phar->stopBuffering();
+            } catch (\UnexpectedValueException $e) {
+            }
+        }
+
+        $template = $this->getHtml('install.html');
+        $page = str_replace('%TITLE%', 'Bolt Installation', $template);
+        $page = str_replace('%CSS%', file_get_contents('phar://bolt/web/installer.css'), $page);
+        $page = str_replace('%BODY%', $body, $page);
+
+        $response = new Response();
         $response->setContent($page);
 
         return $response->send();
@@ -137,14 +151,6 @@ class Web
         return new \Phar($pharFile, \RecursiveDirectoryIterator::FOLLOW_SYMLINKS, 'bolt');
     }
 
-    private function setPharFile(\Phar $phar)
-    {
-        $target = getcwd();
-        $pharFile = sprintf('%s/%s', $target, basename($_SERVER['PHP_SELF']));
-
-        file_put_contents($pharFile, $phar);
-    }
-
     /**
      * @param string $template
      *
@@ -153,5 +159,18 @@ class Web
     private function getHtml($template)
     {
         return file_get_contents(sprintf('phar://bolt/web/%s', $template));
+    }
+
+    /**
+     * @return Application
+     */
+    private function getConsole()
+    {
+        $app = new Application('Bolt Web Installer', null, true);
+        $app->add(new Command\CheckCommand());
+        $app->add(new Command\NewCommand());
+        $app->setAutoExit(false);
+
+        return $app;
     }
 }

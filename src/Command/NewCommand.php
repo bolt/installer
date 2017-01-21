@@ -149,14 +149,27 @@ class NewCommand extends DownloadCommand
                 $this->output->writeln(' * ' . $helpText);
             }
 
-            $checkFile = $this->isBolt3() ? 'bin/symfony_requirements' : 'app/check.php';
+            //$checkFile = $this->isBolt3() ? 'bin/symfony_requirements' : 'app/check.php';
+            //
+            //$this->output->writeln(sprintf(
+            //    " After fixing these issues, re-check Bolt requirements executing this command:\n\n" .
+            //    "   <comment>php %s/%s</comment>\n\n" .
+            //    " Then, you can:\n",
+            //    $this->projectName, $checkFile
+            //));
+        }
 
-            $this->output->writeln(sprintf(
-                " After fixing these issues, re-check Bolt requirements executing this command:\n\n" .
-                "   <comment>php %s/%s</comment>\n\n" .
-                " Then, you can:\n",
-                $this->projectName, $checkFile
-            ));
+        $consoleDir = ($this->isBolt3() ? 'app' : 'bin');
+        $serverRunCommand = version_compare($this->version, '2.6.0', '>=') && extension_loaded('pcntl') ? 'server:start' : 'server:run';
+
+        if ($this->getApplication()->isWeb()) {
+            $webroot = $this->useFlat ? $this->projectDir : $this->projectDir . '/public';
+            $siteUrl = 'http://' . $_SERVER['HTTP_HOST'];
+            $section = str_replace('%DOCROOT%', $webroot, $this->getHtml('result.html'));
+            $section = str_replace('%SITE_URL%', $siteUrl, $section);
+            $this->output->writeln($section);
+
+            return $this;
         }
 
         if ('.' !== $this->projectDir) {
@@ -164,9 +177,6 @@ class NewCommand extends DownloadCommand
                 "    * Change your current directory to <comment>%s</comment>\n", $this->projectDir
             ));
         }
-
-        $consoleDir = ($this->isBolt3() ? 'bin' : 'app');
-        $serverRunCommand = version_compare($this->version, '2.6.0', '>=') && extension_loaded('pcntl') ? 'server:start' : 'server:run';
 
         $this->output->writeln(sprintf(
             "    * Configure your application in <comment>app/config/config.yml</comment> file.\n\n" .
@@ -259,7 +269,6 @@ class NewCommand extends DownloadCommand
      */
     protected function getRemoteFileUrl()
     {
-        $build = $this->useFlat ? true : false;
         $queryParams = http_build_query(['php' => PHP_VERSION_ID, 'flat' => $this->useFlat]);
 
         if ($this->version === 'latest') {
