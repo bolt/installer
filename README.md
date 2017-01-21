@@ -154,18 +154,3 @@ openssl.cafile=C:/path/to/cacert.pem
 If you can't locate the `cacert.pem` file anywhere on your system, you can
 safely download it from the official website of the cURL project:
 http://curl.haxx.se/ca/cacert.pem
-
-# Building PHAR
-
-To build:
-
-Install Box:
-
-```bash
-composer global require kherge/box
-```
-
-Run box:
-```bash
-box build
-```
