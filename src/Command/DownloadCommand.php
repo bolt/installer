@@ -1,7 +1,6 @@
 <?php
 
 namespace Bolt\Installer\Command;
-use Bolt\Installer\Application;
 use Bolt\Installer\Exception\AbortException;
 use Bolt\Installer\Manager\ComposerManager;
 use Bolt\Installer\Urls;
@@ -17,8 +16,6 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\RequestOptions;
 use Symfony\Component\Cache;
-use Symfony\Component\Console\Application as ConsoleApplication;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Helper;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
@@ -38,7 +35,7 @@ use Symfony\Component\Intl\Exception\MethodArgumentValueNotImplementedException;
  * @author Javier Eguiluz <javier.eguiluz@gmail.com>
  * @author Gawain Lynch <gawain.lynch@gmail.com>
  */
-abstract class DownloadCommand extends Command
+abstract class DownloadCommand extends BaseCommand
 {
     /** @var Filesystem To dump content to a file */
     protected $fs;
@@ -65,8 +62,6 @@ abstract class DownloadCommand extends Command
 
     /** @var Cache\Adapter\AbstractAdapter */
     private $cache;
-    /** @var Application */
-    private $application;
 
     /**
      * Returns the type of the downloaded application in a human readable format.
@@ -82,23 +77,6 @@ abstract class DownloadCommand extends Command
      * @return string The absolute URL of the remote file downloaded by the command
      */
     abstract protected function getRemoteFileUrl();
-
-    /**
-     * @return Application
-     */
-    public function getApplication()
-    {
-        return $this->application;
-    }
-
-    /**
-     * @param ConsoleApplication|null $application
-     */
-    public function setApplication(ConsoleApplication $application = null)
-    {
-        $this->application = $application;
-        parent::setApplication($application);
-    }
 
     /**
      * {@inheritdoc}

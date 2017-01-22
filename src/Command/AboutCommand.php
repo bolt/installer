@@ -2,7 +2,6 @@
 
 namespace Bolt\Installer\Command;
 
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -14,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * @author Javier Eguiluz <javier.eguiluz@gmail.com>
  * @author Gawain Lynch <gawain.lynch@gmail.com>
  */
-class AboutCommand extends Command
+class AboutCommand extends BaseCommand
 {
     /**
      * {@inheritdoc}
@@ -77,7 +76,7 @@ COMMAND_UPDATE_HELP;
         }
 
         $output->writeln(sprintf($commandHelp,
-            $this->$this->getApplication()->getVersion(),
+            $this->getApplication()->getVersion(),
             str_repeat('=', 20 + strlen($this->getApplication()->getVersion())),
             $this->getExecutedCommand()
         ));

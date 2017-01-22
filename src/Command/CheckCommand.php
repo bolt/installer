@@ -18,7 +18,7 @@ use Symfony\Component\Filesystem\Filesystem;
  *
  * @author Gawain Lynch <gawain.lynch@gmail.com>
  */
-class CheckCommand extends Command
+class CheckCommand extends BaseCommand
 {
     /** @var Filesystem */
     protected $fs;
