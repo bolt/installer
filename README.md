@@ -12,14 +12,14 @@ This step is only needed the first time you use the installer:
 ### Linux and Mac OS X
 
 ```bash
-$ sudo curl -LsS https://bolt.cm/installer -o /usr/local/bin/bolt
+$ sudo curl -LsS https://get.bolt.cm/installer -o /usr/local/bin/bolt
 $ sudo chmod a+x /usr/local/bin/bolt
 ```
 
 ### Windows
 
 ```bash
-c:\> php -r "file_put_contents('bolt', file_get_contents('https://bolt.cm/installer'));"
+c:\> php -r "file_put_contents('bolt', file_get_contents('https://get.bolt.cm/installer'));"
 ```
 
 Move the downloaded `bolt` file to your projects directory and execute
