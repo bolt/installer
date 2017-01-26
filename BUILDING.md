@@ -8,7 +8,7 @@ To build:
 composer global require kherge/box
 ```
 
-To use box by just running `box`, you will need to add the installation
+To use box by just running `box`, you might need to add the installation
 directory to your `PATH` in your `~/.bash_profile` (or `~/.zshrc`) like this:
 
 ```
