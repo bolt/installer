@@ -24,7 +24,9 @@ class Web
      */
     public function __construct()
     {
-        ob_clean();
+        if (ob_get_contents()) {
+            ob_clean();
+        }
     }
 
     /**
